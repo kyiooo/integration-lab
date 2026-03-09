@@ -176,6 +176,8 @@ Na linijkę:
 
 ![Github](https://i.postimg.cc/W4dbHnhM/Zrzut-ekranu-2026-03-05-102915.png)
 
+oraz zatwierdziłam zmiany.
+
 2. Krok 2 (Lokalnie): 
 
 Zmieniam linijkę:
@@ -190,3 +192,99 @@ Na linijkę:
 
 3. Krok 3 (Błąd): 
 
+Wykonuję poniższe polecenia w terminalu:
+
+```
+git add README.md
+git commit -m "Local change to README"
+git push origin main
+```
+Tak jak powinno się wydarzyć, Git odrzucił operację, zgodnię z tym, że wersja na serwerze zawiera zmiany, których nie posiadam lokalnie.
+
+![Błąd](https://i.postimg.cc/LXny5WJz/obraz-2026-03-09-150741601.png)
+
+4. Krok 4 (Rozwiązanie):
+   
+Po wykonaniu polecenia `git pull origin main` wyskoczył komunikat o konflikcie, mówiący, żeby najpierw naprawić błędy a następnie zcommitować. 
+
+Plik *README* na podglądzie zmienił kolor na niebieski a przy nim znajduję się ikonka _↓MD,!_. Po wejściu w dany plik pojawiły się nowe znaczniki.
+
+![Znaczniki](https://i.postimg.cc/FR6hkwGZ/obraz-2026-03-09-152409986.png)
+
+Usunęłam je, wybrałam jedną opcję i zcommitowałam zmianę:
+```
+git add README.md
+git commit -m "Fix merge conflict in README"
+git push origin main
+```
+---
+
+### Punkt 6 - Automatyzacja z Github Actions
+
+1. Przygotowywanie struktury:
+   
+Wykonuję polecenie:
+`mkdir -p .github/workflows`
+
+![struktura](https://i.postimg.cc/fyCWT5kj/obraz-2026-03-09-160344930.png)
+
+Po wykonaniu w folderze głównym powstał folder _.github_ a wnim podfolder _workflows_.
+
+2. Stworzenie pliku workflow:
+
+Utworzyłam w podfolderze _workflows_ plik *.github/workflows/django_check.yml*
+
+3. Skopiowałam podaną treść w zadaniu do utworzonego pliku -done
+
+4. Test automatyzacji:
+
+Po zapisaniu pliku wypchęłam go do Github'a
+
+```
+git add .github/workflows/django_check.yml
+git commit -m "Add GitHub Actions workflow"
+git push
+```
+Następnie sprawdziłam na Github zakładkę Actions, gdzie powstał nowy uruchomiony proces.
+![Actions](https://i.postimg.cc/pd7MC450/obraz-2026-03-09-161819683.png)
+
+5. Symulacja błędu:
+
+Aby sprawdzić czy moja "sprawdzarka" działa, otworzyłam plik _core/urls.py_ gdzie usunęłam nawias `]` na końcu listy `urlpatterns`
+
+Plik _urls.py_ poświetla się na czerwono podkreślając 2 błędy oraz pokazuje znacznik *M* czyli modified.
+
+W takim stanie spróbowałam wypchnąć zmianę oraz sprawdzić czy Github Actions zgłosi błąd. 
+
+```
+git add core/urls.py
+git commit -m "Introduce intentional syntax error"
+git push origin main
+```
+![Actions/bląd](https://i.postimg.cc/ZKTYWk8X/obraz-2026-03-09-162727391.png)
+
+Na stronie Actions został zgłoszony błąd poprzez czerwony ptaszek przy ostatniej akcji. Oznacza to, że test okazał się sukcesem i moja "sprawdzarka" działa poprawnie.
+
+Kolejno przeszłam do naprawienia błędu.
+Wrócilam się do pliku  _urls.py_ oraz zwróciłam brakujący `]` na końcu listy `urlpatterns`
+Następnie wypchęnłam zmiany do Github.
+```
+git add .
+git commit -m "Fix syntax error"
+git push origin main
+```
+![Actions/naprawa](https://i.postimg.cc/59QK8j3Y/Zrzut-ekranu-2026-03-09-163459.png)
+
+---
+
+### Podsumowanie realizacji zadań:
+
+* Wszystkie punkty z instrukcji (1-6) zostały zrealizowane pomyślnie:
+* Środowisko: Skonfigurowałam Git (SSH), Python oraz wirtualne środowisko venv. Plik .gitignore poprawnie filtruje zbędne pliki.
+* Projekt Django: Zainicjalizowałam strukturę projektu i stworzyłan aplikację base.
+* Markdown: Plik README.md zawiera wymagane formatowanie (nagłówki, listy, linki, kod).
+* Git & Branching: Praca odbywała się na gałęziach feature/. W repozytorium znajdują się co najmniej dwie dodatkowe gałęzie.
+* Konflikt: Przetestowałam i rozwiązałam konflikt wersji w pliku README.md (synchronizacja lokalna vs GitHub).
+* GitHub Actions: Skonfigurowałam automatyczny test składni (flake8). Pomyślnie przetestowałam scenariusz błędu (Czerwony X) oraz poprawnego przejścia (Zielony ptaszek).
+* Repozytorium: Projekt jest publiczny, posiada czytelną historię commitów i poprawny plik requirements.txt.
+* Ostatnim commitem jest pełny plik sprawozdania.
