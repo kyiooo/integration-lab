@@ -218,5 +218,69 @@ Odpaliłam server `python manage.py runserver` i weszłam w link `http:/127.0.0.
 
 ![view](https://i.postimg.cc/FRstyNBL/obraz-2026-03-10-142709767.png)
 
+Później jeszcze pobawiłam się trochę wyglądem strony dodając bootstrapa, oraz zmieniłam wyświetlanie by najnowsze posty pojawiły się na górze.
+
+![viewladny](https://i.postimg.cc/8z1DN2ht/obraz-2026-03-10-170849689.png)
+
 1. Commit:
 
+Sprawdziłam, czy znajduję się na odpowiedniej gałęzi `git branch`
+Dodałam wszystko `git add .`
+Następnie zrobiłam commita `git commit -m "Implement basic views and templates for blog posts"`
+
+---
+
+### Punkt 6 - Zarządzanie zmianami i Megre
+
+1. Sprawdzenie statusu swojej pracy i wypchnięcie gałęzi:
+
+`git status` - Nic do zcommitowania, na branchu feature/blog-app
+```
+git checkout main
+git pull origin main
+git merge feature/blog-app
+git push origin main
+```
+Przeszłam na główną gałąź, upewniłam się, że main jest aktualny, następnie zmergowałam gałąź i kolejno wypchnęłam wszystko na github.
+
+2. Stwórz Pull Request na GitHubie:
+
+Weszłam na stronę github, kliknęłam zakładkę Pull requests, następnie kliknęłam zielony przycisk _New pull request_. Niestety zorientowałam się, że nie powinnam była wcześniej mergować więc przeszłam do "ratowania" sytuacji:
+
+Po rozwiązaniu sytuacji, utworzyłam pull requesta:
+![pr](https://i.postimg.cc/zvb6twHP/obraz-2026-03-10-174039019.png)
+
+![pr2](https://i.postimg.cc/KcPHzYrm/obraz-2026-03-10-174417526.png)
+
+3. Zmerguj gałąź `feature/blog-app` do `main`
+
+Postanowiłam zmegrować gałąź przez github, na poprzednim zdjęciu kliknęłam zielony przycisk _Merge pull request_ oraz go potwierdziłam.
+
+![pr3](https://i.postimg.cc/dQfLhqsc/obraz-2026-03-10-174751524.png)
+
+Postanowiłam sprawdzić czy historia Gita odnotowała scalenie.
+
+```
+git checkout main
+git pull origin main
+git log --oneline --graph --all -n 10
+```
+
+![scalenie](https://i.postimg.cc/8CvqmmWf/obraz-2026-03-10-175439814.png)
+
+Tak, odnotowała.
+
+----
+
+### Podsumowanie realizacji zadań:
+
+* Konfiguracja projektu: aplikacja blog dodana do INSTALLED_APPS.
+* Modele (Model): Stworzono klasę Post z polami: tytuł, treść, autor (klucz obcy) i data publikacji.
+* Migracje: Tabele w bazie danych utworzone (makemigrations, migrate).
+* Panel Admina: Model zarejestrowany, dodano testowe posty przez /admin.
+* Użyto widoków generycznych ListView (lista postów) i DetailView (szczegóły).
+* Szablony HTML ostylowano Bootstrapem.
+* Praca na dedykowanej gałęzi feature/blog-app.
+* Poprawne scalenie (Merge) do gałęzi main.
+* Utworzenie i zatwierdzenie Pull Requesta na GitHubie.
+* Testy i CI (Opcjonalnie na jutro): Plik tests.py i .github/workflows/django.yml przygotowane do automatyzacji.

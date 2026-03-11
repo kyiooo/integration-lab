@@ -5,7 +5,7 @@
 * **Imię i nazwisko:** [Małgorzata Andrzejewska]
 * **Kierunek:** [Informatyka]
 * **Grupa:** [235IC A2]
-
+* **Link do repo na github:** [https://github.com/kyiooo/integration-lab]
 ----
 ### Punkt 1 - Konfiguracja środowiska i Markdown
 
