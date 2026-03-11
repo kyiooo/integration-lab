@@ -1,3 +1,6 @@
+![Syntax Check](https://github.com/kyiooo/integration-lab/actions/workflows/django_check.yml/badge.svg)
+![Logic Tests](https://github.com/kyiooo/integration-lab/actions/workflows/django_tests.yml/badge.svg)
+
 # Laboratorium - Integracja systemów informatycznych
 
 [Małgorzata Andrzejewska]

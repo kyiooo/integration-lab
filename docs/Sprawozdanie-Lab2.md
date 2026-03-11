@@ -270,6 +270,72 @@ git log --oneline --graph --all -n 10
 
 Tak, odnotowała.
 
+4. Opcjonalne: dodanie testów jednostkowych
+
+W pliku `blog/tests.py` dodałam 2 testy jednostkowe:
+
+* Przypadek pustego bloga:
+Test sprawdza, czy strona działa poprawnie, gdy baza jest pusta i nie ma żadnego posta:
+```
+def test_empty_blog_behavior(self):
+        response = self.client.get(reverse('postList'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "") 
+```
+* Bezpieczeństwo panelu admina:
+Sprawdza, czy anonim nie może wejść do panelu admina
+```
+def test_unauthorized_access_to_admin(self):
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 302)
+```
+
+Po napisaniu testów i zapisaniu plików, stworzyłam nowy plik w folderze `.github/workflows` czyli `github/workflows/django_tests.yml` i uzupełniłam go o kod:
+```
+name: Django Logic Tests
+on: [push]
+jobs:
+  test-logic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install Django
+        run: pip install django
+      - name: Run Tests
+        run: python manage.py test
+```
+
+Następnie wykonałam test lokalnie za pomocą komendy: `python manage.py test`
+![testy](https://i.postimg.cc/Qt6SQLFC/obraz-2026-03-11-105313910.png)
+Oba testy przeszły bezbłędnie.
+
+Kolejno celowo zmieniłam kod bezpieczeństwa w teście panelu admina  z 302 na 200 aby sprawdzić, czy wywali błąd.
+![testy/blad](https://i.postimg.cc/hPVZqKZY/obraz-2026-03-11-105923797.png)
+Test lokalny zwrócił błąd w oczekiwanym miejscu.
+
+Wysłałam commita:
+```
+git add .
+git commit -m "Add logic tests for empty blog and admin security"
+git push origin main
+```
+Dzięki temu mam teraz 2 Github Actions, jednen od poprawności kodu pod względem błędów oraz kolejny od testów.
+
+![githubActions](https://i.postimg.cc/kX4JGh8N/obraz-2026-03-11-111505530.png)
+
+Zdecydowałam się dodatkowo dodać odznakę do `README.md` na samej górze:
+```
+![Syntax Check](https://github.com/kyiooo/integration-lab/actions/workflows/django_check.yml/badge.svg)
+![Logic Tests](https://github.com/kyiooo/integration-lab/actions/workflows/django_tests.yml/badge.svg)
+```
+One spowodują, że każdy kto wejdzie w repozytorium zobaczy w README czy testy przechodzą.
+
+Ostatnim commitem jest zmiana w `README.md` oraz końcowa wersja sprawozdania.
+
 ----
 
 ### Podsumowanie realizacji zadań:
@@ -283,4 +349,4 @@ Tak, odnotowała.
 * Praca na dedykowanej gałęzi feature/blog-app.
 * Poprawne scalenie (Merge) do gałęzi main.
 * Utworzenie i zatwierdzenie Pull Requesta na GitHubie.
-* Testy i CI (Opcjonalnie na jutro): Plik tests.py i .github/workflows/django.yml przygotowane do automatyzacji.
+* Testy i CI : Plik tests.py i .github/workflows/django_tests.yml przygotowane do automatyzacji.
