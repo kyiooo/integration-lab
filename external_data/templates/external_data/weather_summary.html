@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podsumowanie Pogody API</title>
+    <style>
+        body {
+            background-color: #fff0f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .summary-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #efa7cb;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 380px;
+        }
+        h2 { color: #b05a84; margin-bottom: 25px; }
+        .stat-box {
+            background: #fff9fb;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #fce4ec;
+        }
+        .stat-value {
+            display: block;
+            font-size: 2.2em;
+            color: #efa7cb;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .footer-note {
+            font-size: 0.75em;
+            color: #b05a84;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-card">
+        {% if success %}
+            <h2> Prognoza pogody na nadchodzący dzień dla: {{ place }} </h2>
+            
+            <div class="stat-box">
+                <span class="stat-label">Średnia Temperatura</span>
+                <span class="stat-value">{{ avg_temp }}°C</span>
+            </div>
+
+            <div class="stat-box">
+                <span class="stat-label">Suma Opadów</span>
+                <span class="stat-value">{{ total_precip }} mm</span>
+            </div>
+        {% else %}
+            <h2 style="color: #ff4d4d;">Błąd API</h2>
+            <p>{{ error }}</p>
+        {% endif %}
+        
+        <br>
+        <a href="javascript:history.back()" style="color: #b05a84; text-decoration: none; font-weight: bold;">← Powrót</a>
+    </div>
+
+</body>
+</html>

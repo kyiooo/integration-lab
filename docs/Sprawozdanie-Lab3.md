@@ -1,0 +1,388 @@
+# Laboratorium nr 3
+**Temat:** Integracja z zewnętrznymi API i przetwarzanie danych
+
+## Dane autora
+* **Imię i nazwisko:** [Małgorzata Andrzejewska]
+* **Kierunek:** [Informatyka]
+* **Grupa:** [235IC A2]
+* **Link do repo na github:** [https://github.com/kyiooo/integration-lab]
+----
+
+### Punkt 1 - Praca na gałęziach
+
+1. Stworzenie nowej gałęzi `git checkout -b feature/external-api-integration` - done
+
+---
+### Punkt 2 - Przygotowanie struktury
+
+**Stworzenie nowej aplikacji oraz zainstalowanie potrzebnych bibliotek.**
+
+1. Utworzyłam nową aplikację za pomocą komendy:
+`python manage.py startapp external_data`
+
+2. Następnie dodałam ją do _settings.py_ w sekcji **INSTALLED_APPS**:
+`'external_data',`
+
+3. Zainstalowałam niezbędne biblioteki: `requests`, `matplotlib`
+`pip install requests matplotlib`
+
+4. Dodałam zainstalowane biblioteki do pliku zależności `requirements.txt`
+`pip freeze > requirements.txt`
+
+![requirements](https://i.postimg.cc/Vk3JLm2t/obraz-2026-04-13-144630182.png)
+
+5. Wykonałam commit aby zapisać zmiany w konfiguracji:
+```
+git add .
+git commit -m "update requirements.txt with requests and matplotlib"
+git push origin feature/external-api-integration
+```
+----
+
+### Punkt 3 - Integracja z Open-Meteo API
+
+1. Musiałam utworzyć ścieżkę, po której dojdę do strony z pogodą:
+
+W liście `urlpatterns` w pliku _core/urls.py_ dodałam nową linijkę:
+`path('external/', include('external_data.urls')),`
+
+Stworzyłam nowy plik _external_data/urls.py_ oraz uzupełniłam jego zawartość:
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('weather/', views.weather_view, name='weather_view'),
+]
+```
+1. Napisz logikę pobierającą prognozę pogody dla wybranego miasta(Seul: [szerokość: 37°56′N, długość: 126°97′E] jako wpółrzędne centrum)
+
+W pliku _external_data/views.py_ uzupełniłam:
+```
+import requests
+from django.shortcuts import render
+
+def weather_view(request):
+    coordinates = {
+        "Seul": ("37.56", "126.97")
+    }
+    place = "Seul"
+    
+    weather_url = (f"https://api.open-meteo.com/v1/forecast"
+                   f"?latitude={coordinates[place][0]}&longitude={coordinates[place][1]}"
+                   f"&hourly=temperature_2m&current_weather=true&timezone=auto")
+
+    try:
+        response = requests.get(weather_url, timeout=10)
+        response.raise_for_status()
+        seul_weather = response.json() 
+        
+        return render(request, 'external_data/weather.html', {
+            'place': place,
+            'lat': coordinates[place][0],
+            'lon': coordinates[place][1],
+            'raw_data': data,
+            'success': True
+        })
+        
+    except Exception as e:
+        return render(request, 'external_data/weather.html', {'success': False, 'error': str(e)})
+```
+
+Uzupełniłam kod o `try-except` w celu obsłużenia błędów połączenia oraz `response.raise_for_status()` dla sprawdzania kodu statusu HTTP.
+
+2. Obróbka danych
+
+Dopisałam logikę filtracji danych do mojego widoku:
+```
+        hourly_data = seul_weather['hourly']
+        godziny_raw = hourly_data['time'][:24]
+        temperatury_wykres = hourly_data['temperature_2m'][:24]
+        aktualna_temp = seul_weather['current_weather']['temperature']
+        godziny_short = [g[-5:] for g in godziny_raw]
+```
+Następnie zmieniłam `return render` na:
+```
+return render(request, 'external_data/weather.html', {
+            'place': place,
+            'lat': coordinates[place][0],
+            'lon': coordinates[place][1],
+            'temp': aktualna_temp,
+            'success': True
+        })
+```
+
+3. Wizualizacja
+
+Dodałam odpowiednie importy:
+```
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import io, base64
+import datetime
+```
+`matplotlib.use('Agg') ` - pozwala tworzyć wykresy bez otwierania okien na serwerze
+
+Następnie dodałam wizualizację z użyciem matplotlib oraz Base64 
+```
+# 3. Wizualizacja 
+        plt.figure(figsize=(10, 5))
+        plt.plot(godziny_short, temperatury_wykres, color='#efa7cb', marker='o', linewidth=3)
+        plt.ylabel('Temperatura (°C)', color='#666', fontsize=12) 
+        plt.xlabel('Godzina (czas lokalny)', color='#666')
+        plt.xticks(rotation=45)
+        plt.grid(True, axis='y', linestyle='--', alpha=0.3)
+        plt.tight_layout()
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        chart_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        buf.close()
+        plt.close()
+```
+Następnie do render dodałam:
+`'chart': chart_base64,`
+
+4. Wyświetlenie
+
+Utworzyłam nowy szablon: `external_data/templates/external_data/weather.html` oraz uzupełniłam go o daną treść dodając Bootstrapa dla estetyki:
+
+```
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Pogoda: {{ place }}</title>
+    <style>
+        body { background-color: #fff5f7; }
+        .navbar-custom { background-color: #ffdae9; }
+        .article-container { background-color: white; border-radius: 20px; padding: 40px; }
+        h1 { color: #efa7cb; }
+        .temp-box { background-color: #ffdae9; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="article-container shadow-sm text-center">
+                    {% if success %}
+                        <h1>Prognoza dla: {{ place }}</h1>
+                        <p class="text-muted">Współrzędne: {{ lat }}, {{ lon }}</p>
+
+                        <div class="temp-box">
+                            <strong>Aktualna temperatura: {{ temp }}°C</strong>
+                        </div>
+
+                        <div class="mt-4">
+                            <img src="data:image/png;base64,{{ chart }}" class="img-fluid border shadow-sm" alt="Wykres">
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">Błąd: {{ error }}</div>
+                    {% endif %}
+
+                    <hr class="mt-5">
+                    <a href="/" class="btn btn-outline-secondary">← Wróć</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+```
+
+5. Efekt końcowy z Open-Meteo API:
+
+* Dane zostały poddane obróbce
+* Zaimplementowano jedną formę wizualizacji danych (wykres)
+* Zostały zrobione zrzuty ekranu działającej integracji oraz wygenerowanego wykresu 
+
+Aktualna temperatura generowana na godzinę 01:00(UTC+9)
+![Dzialajaca integracja](https://i.postimg.cc/RVwDg2Yx/obraz-2026-04-13-183755344.png)
+![Dzialajaca integracja2](https://i.postimg.cc/pdvx0DCQ/obraz-2026-04-13-184521254.png)
+![Wygenerowany wykres](https://i.postimg.cc/tRxSgLpq/obraz-2026-04-13-183846799.png)
+
+6. Commit
+
+```
+git add .
+git commit -m "Add weather data processing and charts"
+git push origin feature/external-api-integration
+```
+
+----
+
+### Punkt 4 - Integracja z JSONPlaceholder API
+
+1. W pliku _external_data/views.py_ dodałam nową funkcję `json_photo_view` pod funkcją `weather_view`
+
+2. Napisałam logikę opierającą się na przykładzie z `examples/json_placeholder.py`
+
+```
+def json_photo_view(request):
+    PHOTOS_URL = "[https://jsonplaceholder.typicode.com/photos](https://jsonplaceholder.typicode.com/photos)"
+    
+    try:
+        response = requests.get(PHOTOS_URL, timeout=10)
+        photos_data = response.json()
+
+        random_index = randint(0, len(photos_data) - 1)
+        photo = photos_data[random_index]
+        
+        print("--- Detale wylosowanego zdjęcia ---")
+        for key, value in photo.items():
+            print(f"{key}: {value}")
+            
+        return render(request, 'external_data/photo_test.html', {
+            'photo': photo,
+            'success': True
+        })
+        
+    except Exception as e:
+        return render(request, 'external_data/photo_test.html', {'success': False, 'error': str(e)})
+```
+
+Uzupełniłam kod o `try-except` w celu obsłużenia błędów połączenia oraz `response.raise_for_status()` dla sprawdzania kodu statusu HTTP.
+
+3.  Do pliku _external_data/urls.py_ dodałam nową zawartość `path('photo-test/', views.json_photo_view, name='photo_test'),`:
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('weather/', views.weather_view, name='weather_view'),
+    path('photo-test/', views.json_photo_view, name='photo_test'),
+]
+```
+4. Obróbka danych - filtrowanie:
+
+```
+        relevant_albums_ids = range(1, 6) 
+        filtered_data = [p for p in photos_data if p['albumId'] in relevant_albums_ids]
+```
+czyli wybrałam zdjęcia tylko z pierwszych 5 albumów
+
+5. Obróbka danych - statystyki:
+
+Utworzyłam listę przetworzonych elementów
+`processed_list = []`
+
+Następnie napisałam logikę gdzie wyciągam zdjęcia tylko dla tego jednego albumu z już przefiltrowanej listy, liczę średnią długość tytułu dla tego konkretnego albumu oraz tworzę słownik z wynikami obróbki.
+            
+```
+        for a_id in relevant_albums_ids:
+            album_photos = [p for p in filtered_data if p['albumId'] == a_id]
+            count = len(album_photos)
+            avg_len = sum(len(p['title']) for p in album_photos) / count if count > 0 else 0
+            
+            processed_list.append({
+                'album_id': a_id,
+                'photo_count': count,
+                'average_title_length': round(avg_len, 2)
+            })
+```
+Następnie zmieniłam render tak by przekazać dane do wizualizacji i sprawdzić czy lista działa:
+```
+return render(request, 'external_data/photo_list.html', {
+            'processed_items': processed_list,
+            'random_photo': photo,
+            'success': True
+        })
+```
+6. Wizualizacja
+
+Utworzyłam plik `external_data/templates/external_data/photo_list.html` oraz uzupełniłam jego zawartość. Nie będę wrzucać do sprawozdania, gdyż nie chcę go zaśmiecić setkami linijek kodu.
+
+W trakcie zadania napotkałam się na problem związany z tym, że oryginalne serwery zdjęć API JSONPlaceholder (via.placeholder.com) są obecnie nieosiągalne, co powodowało błędy wczytywania grafik na stronie. Dlatego zmieniłam trochę logikę w pliku `views.py` czyli zamiast używania zewnętrznych linków, wykorzystałam Matplotlib do wygenerowania obrazka bezpośrednio z kodu. Program pobiera dane tekstowe z API (ID zdjęcia), a następnie tworzy na ich podstawie grafikę w formacie base64 tak jak w przykładzie z Open-Meteo.
+
+* Dane zostały poddane obróbce
+* Zaimplementowano jedną formę wizualizacji danych (Lista elementów) 
+
+![Dzialajaca integracja3](https://i.postimg.cc/fLkGyBpP/obraz-2026-04-14-151840156.png)
+![Dzialajaca integracja4](https://i.postimg.cc/L8RGLHGz/obraz-2026-04-14-151920916.png)
+![Działająca integracja5](https://i.postimg.cc/wTYrYqqX/obraz-2026-04-14-151953472.png)
+
+1. Commit
+
+```
+git add .
+git commit -m "implement JSONPlaceholder API integration"
+git push origin feature/external-api-integration
+```
+
+----
+
+### Punkt 5 - Własny endpoint API
+
+Zdecydowałam się stworzyć własny endpoint znowu oparty na pogodzie z Użyciem API Open-Meteo
+
+Mój endpoint pobiera dane o pogodzie i oblicza średnią temperaturę oraz sumę opadów na nadchodzący dzień dla konkretnego miasta (Gdańsk). Dokładnie liczy 24h następujące od momentu zapytania.
+
+Dodałam nową ścieżkę:
+`path('api/weather-summary/', views.weather_summary_api, name='weather_summary_api'),`
+
+Oraz nową funkcję w pliku `external_data/views.py`:
+```
+def weather_summary_api(request):
+    coordinates = {"Gdansk": ("54.35", "18.64")}
+    place = "Gdansk"
+    
+    weather_url = (f"https://api.open-meteo.com/v1/forecast"
+                   f"?latitude={coordinates[place][0]}&longitude={coordinates[place][1]}"
+                   f"&hourly=temperature_2m,precipitation&timezone=auto&forecast_days=1")
+    
+    try:
+        response = requests.get(weather_url, timeout=10)
+        data = response.json()
+        
+        # Filtrowanie danych
+        hourly_temps = data['hourly']['temperature_2m'][:24]
+        hourly_precip = data['hourly']['precipitation'][:24]
+        
+        # Agregacja 
+        avg_temp = sum(hourly_temps) / len(hourly_temps)
+        total_precip = sum(hourly_precip)
+        
+        return render(request, 'external_data/weather_summary.html', {
+            'place': place,
+            'avg_temp': round(avg_temp, 2),
+            'total_precip': round(total_precip, 2),
+            'success': True
+        })
+    except Exception as e:
+        return render(request, 'external_data/weather_summary.html', {
+            'success': False, 
+            'error': str(e)
+        })
+```
+Użyłam „slicingu” [:24] do filtrowania czasu i funkcji sum() do agregacji
+
+Następnie utworzyłam plik html z wizualizacją podstrony `weahter_summary.html`
+![Dzialajaca integracja6](https://i.postimg.cc/nhSYpxbG/obraz-2026-04-14-165601991.png)
+![Dzialajaca integracja7](https://i.postimg.cc/N0rTtrkD/obraz-2026-04-14-165631347.png)
+
+Zapisanie pracy/commit:
+```
+git add .
+git commit -m "implement weather summary endpoint with data aggregation"
+git push origin feature/external-api-integration
+```
+
+----
+
+### Podsumowanie realizacji zadań:
+
+* Została stworzona i wykorzystana nową gałąź feature/external-api-integration
+* Zaimplementowano pobieranie danych z dwóch zewnętrznych API :Open-Meteo, JSONPlaceholder
+* Dane z zewnętrznych API są poddawane obróbce (filtrowanie,"slicing",agregacja)
+* Zaimplementowano 2 formy wizualizacji danych (wykres temperatury, lista)
+* Stworzono własny endpoint API zwracający przetworzone dane zewnętrzne
+* Obsłużono błędy połączenia (try-except) oraz sprawdzono kody statusu HTTP
+* Zainstalowane biblioteki (requests, matplotlib) zostały dodane do pliku zależności (requirements.txt)
+* Pobrane i przetworzone dane są wyświetlane w czytelny sposób (wykresy, listy)
+* Każdy commit ma jasny opis
+* Sprawozdanie zawiera zrzuty ekranu działających integracji oraz wygenerowanych wykresów

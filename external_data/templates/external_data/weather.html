@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Pogoda: {{ place }}</title>
+    <style>
+        body { background-color: #fff5f7; }
+        .navbar-custom { background-color: #ffdae9; }
+        .article-container { background-color: white; border-radius: 20px; padding: 40px; }
+        h1 { color: #efa7cb; }
+        .temp-box { background-color: #ffdae9; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="article-container shadow-sm text-center">
+                    {% if success %}
+                        <h1>Prognoza dla: {{ place }}</h1>
+                        <p class="text-muted">Współrzędne: {{ lat }}, {{ lon }}</p>
+
+                        <div class="temp-box">
+                            <strong>Aktualna temperatura: {{ temp }}°C</strong>
+                        </div>
+
+                        <div class="mt-4">
+                            <img src="data:image/png;base64,{{ chart }}" class="img-fluid border shadow-sm" alt="Wykres">
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">Błąd: {{ error }}</div>
+                    {% endif %}
+
+                    <hr class="mt-5">
+                    <a href="/" class="btn btn-outline-secondary">← Wróć</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
