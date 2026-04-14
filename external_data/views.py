@@ -6,6 +6,7 @@ import io, base64
 from django.shortcuts import render
 import datetime
 from random import randint
+import json
 
 def weather_view(request):
     coordinates = {"Seul": ("37.56", "126.97")}
@@ -106,3 +107,76 @@ def json_photo_view(request):
         
     except Exception as e:
         return render(request, 'external_data/photo_list.html', {'success': False, 'error': str(e)})
+
+
+
+def weather_summary_api(request):
+    # Dane do WeatherAPI
+    city = "Gdansk"
+    api_key = "719d36e7886a4701980124316241410"
+    url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q={city}&days=1&aqi=no"
+    
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        
+        # AGREGACJA (Punkt 5 zadania)
+        hourly_data = data['forecast']['forecastday'][0]['hour']
+        temps = [h['temp_c'] for h in hourly_data]
+        
+        # Obliczamy średnią temperaturę
+        avg_temp = sum(temps) / len(temps)
+        
+        # Przygotowujemy dane do formatu JSON
+        summary = {
+            "city": city,
+            "average_temp": round(avg_temp, 2),
+            "max_temp": max(temps),
+            "min_temp": min(temps),
+            "status": "Success"
+        }
+        
+        # Konwertujemy na tekst, żeby render mógł go wysłać
+        json_output = json.dumps(summary, indent=4)
+        
+        # Używamy render, ale z typem application/json
+        return render(request, 'external_data/api_response.html', {
+            'json_data': json_output
+        }, content_type='application/json')
+        
+    except Exception as e:
+        error_json = json.dumps({"error": str(e)})
+        return render(request, 'external_data/api_response.html', {'json_data': error_json}, content_type='application/json')
+    
+def weather_summary_api(request):
+    coordinates = {"Gdansk": ("54.35", "18.64")}
+    place = "Gdansk"
+    
+    weather_url = (f"https://api.open-meteo.com/v1/forecast"
+                   f"?latitude={coordinates[place][0]}&longitude={coordinates[place][1]}"
+                   f"&hourly=temperature_2m,precipitation&timezone=auto&forecast_days=1")
+    
+    try:
+        response = requests.get(weather_url, timeout=10)
+        data = response.json()
+        
+        hourly_temps = data['hourly']['temperature_2m'][:24]
+        hourly_precip = data['hourly']['precipitation'][:24]
+        
+        # Agregacja 
+        avg_temp = sum(hourly_temps) / len(hourly_temps)
+        total_precip = sum(hourly_precip)
+        
+        return render(request, 'external_data/weather_summary.html', {
+            'place': place,
+            'avg_temp': round(avg_temp, 2),
+            'total_precip': round(total_precip, 2),
+            'success': True
+        })
+    except Exception as e:
+        return render(request, 'external_data/weather_summary.html', {
+            'success': False, 
+            'error': str(e)
+        })
+        
+
