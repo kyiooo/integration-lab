@@ -1,5 +1,5 @@
 # Laboratorium nr 3
-**Temat:** Tworzenie REST API w Django i integracja z zewnętrznymi usługami
+**Temat:** Integracja z zewnętrznymi API i przetwarzanie danych
 
 ## Dane autora
 * **Imię i nazwisko:** [Małgorzata Andrzejewska]
@@ -93,7 +93,7 @@ Uzupełniłam kod o `try-except` w celu obsłużenia błędów połączenia oraz
 
 2. Obróbka danych
 
-Dopisałam logikę wycinania danych do mojego widoku:
+Dopisałam logikę filtracji danych do mojego widoku:
 ```
         hourly_data = seul_weather['hourly']
         godziny_raw = hourly_data['time'][:24]
@@ -297,13 +297,16 @@ return render(request, 'external_data/photo_list.html', {
 
 Utworzyłam plik `external_data/templates/external_data/photo_list.html` oraz uzupełniłam jego zawartość. Nie będę wrzucać do sprawozdania, gdyż nie chcę go zaśmiecić setkami linijek kodu.
 
-W trakcie zadania napotkałam się na problem związany z tym, że oryginalne serwery zdjęć API JSONPlaceholder (via.placeholder.com) są obecnie nieosiągalne, co powodowało błędy wczytywania grafik na stronie. Dlatego zmieniłam trochę logikę w pliku `views.py` czyli zamiast używania zewnętrznych linków, wykorzystałam Matplotlib do wygenerowania obrazka bezpośrednio z kodu. Program pobiera dane tekstowe z API (ID zdjęcia), a następnie tworzy na ich podstawie grafikę w formacie base64.
+W trakcie zadania napotkałam się na problem związany z tym, że oryginalne serwery zdjęć API JSONPlaceholder (via.placeholder.com) są obecnie nieosiągalne, co powodowało błędy wczytywania grafik na stronie. Dlatego zmieniłam trochę logikę w pliku `views.py` czyli zamiast używania zewnętrznych linków, wykorzystałam Matplotlib do wygenerowania obrazka bezpośrednio z kodu. Program pobiera dane tekstowe z API (ID zdjęcia), a następnie tworzy na ich podstawie grafikę w formacie base64 tak jak w przykładzie z Open-Meteo.
+
+* Dane zostały poddane obróbce
+* Zaimplementowano jedną formę wizualizacji danych (Lista elementów) 
 
 ![Dzialajaca integracja3](https://i.postimg.cc/fLkGyBpP/obraz-2026-04-14-151840156.png)
 ![Dzialajaca integracja4](https://i.postimg.cc/L8RGLHGz/obraz-2026-04-14-151920916.png)
 ![Działająca integracja5](https://i.postimg.cc/wTYrYqqX/obraz-2026-04-14-151953472.png)
 
-7. Commit
+1. Commit
 
 ```
 git add .
@@ -314,3 +317,72 @@ git push origin feature/external-api-integration
 ----
 
 ### Punkt 5 - Własny endpoint API
+
+Zdecydowałam się stworzyć własny endpoint znowu oparty na pogodzie z Użyciem API Open-Meteo
+
+Mój endpoint pobiera dane o pogodzie i oblicza średnią temperaturę oraz sumę opadów na nadchodzący dzień dla konkretnego miasta (Gdańsk). Dokładnie liczy 24h następujące od momentu zapytania.
+
+Dodałam nową ścieżkę:
+`path('api/weather-summary/', views.weather_summary_api, name='weather_summary_api'),`
+
+Oraz nową funkcję w pliku `external_data/views.py`:
+```
+def weather_summary_api(request):
+    coordinates = {"Gdansk": ("54.35", "18.64")}
+    place = "Gdansk"
+    
+    weather_url = (f"https://api.open-meteo.com/v1/forecast"
+                   f"?latitude={coordinates[place][0]}&longitude={coordinates[place][1]}"
+                   f"&hourly=temperature_2m,precipitation&timezone=auto&forecast_days=1")
+    
+    try:
+        response = requests.get(weather_url, timeout=10)
+        data = response.json()
+        
+        # Filtrowanie danych
+        hourly_temps = data['hourly']['temperature_2m'][:24]
+        hourly_precip = data['hourly']['precipitation'][:24]
+        
+        # Agregacja 
+        avg_temp = sum(hourly_temps) / len(hourly_temps)
+        total_precip = sum(hourly_precip)
+        
+        return render(request, 'external_data/weather_summary.html', {
+            'place': place,
+            'avg_temp': round(avg_temp, 2),
+            'total_precip': round(total_precip, 2),
+            'success': True
+        })
+    except Exception as e:
+        return render(request, 'external_data/weather_summary.html', {
+            'success': False, 
+            'error': str(e)
+        })
+```
+Użyłam „slicingu” [:24] do filtrowania czasu i funkcji sum() do agregacji
+
+Następnie utworzyłam plik html z wizualizacją podstrony `weahter_summary.html`
+![Dzialajaca integracja6](https://i.postimg.cc/nhSYpxbG/obraz-2026-04-14-165601991.png)
+![Dzialajaca integracja7](https://i.postimg.cc/N0rTtrkD/obraz-2026-04-14-165631347.png)
+
+Zapisanie pracy/commit:
+```
+git add .
+git commit -m "implement weather summary endpoint with data aggregation"
+git push origin feature/external-api-integration
+```
+
+----
+
+### Podsumowanie realizacji zadań:
+
+* Została stworzona i wykorzystana nową gałąź feature/external-api-integration
+* Zaimplementowano pobieranie danych z dwóch zewnętrznych API :Open-Meteo, JSONPlaceholder
+* Dane z zewnętrznych API są poddawane obróbce (filtrowanie,"slicing",agregacja)
+* Zaimplementowano 2 formy wizualizacji danych (wykres temperatury, lista)
+* Stworzono własny endpoint API zwracający przetworzone dane zewnętrzne
+* Obsłużono błędy połączenia (try-except) oraz sprawdzono kody statusu HTTP
+* Zainstalowane biblioteki (requests, matplotlib) zostały dodane do pliku zależności (requirements.txt)
+* Pobrane i przetworzone dane są wyświetlane w czytelny sposób (wykresy, listy)
+* Każdy commit ma jasny opis
+* Sprawozdanie zawiera zrzuty ekranu działających integracji oraz wygenerowanych wykresów
