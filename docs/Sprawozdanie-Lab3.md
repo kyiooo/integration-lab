@@ -211,9 +211,106 @@ Aktualna temperatura generowana na godzinę 01:00(UTC+9)
 ```
 git add .
 git commit -m "Add weather data processing and charts"
-git push origin main
+git push origin feature/external-api-integration
 ```
 
 ----
 
-### Punkt 4 
+### Punkt 4 - Integracja z JSONPlaceholder API
+
+1. W pliku _external_data/views.py_ dodałam nową funkcję `json_photo_view` pod funkcją `weather_view`
+
+2. Napisałam logikę opierającą się na przykładzie z `examples/json_placeholder.py`
+
+```
+def json_photo_view(request):
+    PHOTOS_URL = "[https://jsonplaceholder.typicode.com/photos](https://jsonplaceholder.typicode.com/photos)"
+    
+    try:
+        response = requests.get(PHOTOS_URL, timeout=10)
+        photos_data = response.json()
+
+        random_index = randint(0, len(photos_data) - 1)
+        photo = photos_data[random_index]
+        
+        print("--- Detale wylosowanego zdjęcia ---")
+        for key, value in photo.items():
+            print(f"{key}: {value}")
+            
+        return render(request, 'external_data/photo_test.html', {
+            'photo': photo,
+            'success': True
+        })
+        
+    except Exception as e:
+        return render(request, 'external_data/photo_test.html', {'success': False, 'error': str(e)})
+```
+
+Uzupełniłam kod o `try-except` w celu obsłużenia błędów połączenia oraz `response.raise_for_status()` dla sprawdzania kodu statusu HTTP.
+
+3.  Do pliku _external_data/urls.py_ dodałam nową zawartość `path('photo-test/', views.json_photo_view, name='photo_test'),`:
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('weather/', views.weather_view, name='weather_view'),
+    path('photo-test/', views.json_photo_view, name='photo_test'),
+]
+```
+4. Obróbka danych - filtrowanie:
+
+```
+        relevant_albums_ids = range(1, 6) 
+        filtered_data = [p for p in photos_data if p['albumId'] in relevant_albums_ids]
+```
+czyli wybrałam zdjęcia tylko z pierwszych 5 albumów
+
+5. Obróbka danych - statystyki:
+
+Utworzyłam listę przetworzonych elementów
+`processed_list = []`
+
+Następnie napisałam logikę gdzie wyciągam zdjęcia tylko dla tego jednego albumu z już przefiltrowanej listy, liczę średnią długość tytułu dla tego konkretnego albumu oraz tworzę słownik z wynikami obróbki.
+            
+```
+        for a_id in relevant_albums_ids:
+            album_photos = [p for p in filtered_data if p['albumId'] == a_id]
+            count = len(album_photos)
+            avg_len = sum(len(p['title']) for p in album_photos) / count if count > 0 else 0
+            
+            processed_list.append({
+                'album_id': a_id,
+                'photo_count': count,
+                'average_title_length': round(avg_len, 2)
+            })
+```
+Następnie zmieniłam render tak by przekazać dane do wizualizacji i sprawdzić czy lista działa:
+```
+return render(request, 'external_data/photo_list.html', {
+            'processed_items': processed_list,
+            'random_photo': photo,
+            'success': True
+        })
+```
+6. Wizualizacja
+
+Utworzyłam plik `external_data/templates/external_data/photo_list.html` oraz uzupełniłam jego zawartość. Nie będę wrzucać do sprawozdania, gdyż nie chcę go zaśmiecić setkami linijek kodu.
+
+W trakcie zadania napotkałam się na problem związany z tym, że oryginalne serwery zdjęć API JSONPlaceholder (via.placeholder.com) są obecnie nieosiągalne, co powodowało błędy wczytywania grafik na stronie. Dlatego zmieniłam trochę logikę w pliku `views.py` czyli zamiast używania zewnętrznych linków, wykorzystałam Matplotlib do wygenerowania obrazka bezpośrednio z kodu. Program pobiera dane tekstowe z API (ID zdjęcia), a następnie tworzy na ich podstawie grafikę w formacie base64.
+
+![Dzialajaca integracja3](https://i.postimg.cc/fLkGyBpP/obraz-2026-04-14-151840156.png)
+![Dzialajaca integracja4](https://i.postimg.cc/L8RGLHGz/obraz-2026-04-14-151920916.png)
+![Działająca integracja5](https://i.postimg.cc/wTYrYqqX/obraz-2026-04-14-151953472.png)
+
+7. Commit
+
+```
+git add .
+git commit -m "implement JSONPlaceholder API integration"
+git push origin feature/external-api-integration
+```
+
+----
+
+### Punkt 5 - Własny endpoint API
