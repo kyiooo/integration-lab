@@ -9,7 +9,6 @@ class BlogLogicTests(TestCase):
         """Sprawdza, czy strona działa poprawnie, gdy nie ma jeszcze postów."""
         response = self.client.get(reverse('postList'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "") 
 
     def test_unauthorized_access_to_admin(self):
         """Test bezpieczeństwa: sprawdza, czy panel admina jest chroniony."""
