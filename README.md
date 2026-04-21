@@ -34,6 +34,7 @@ Projekt skupia się na implementacji standardów Feature _Branch Workflow_ oraz 
 ---
 ### Przydatne komendy
 Aby uruchomić serwer deweloperski w przyszłości, użyjemy komendy: `python manage.py runserver`
+Aktualne odpalenie aplikacji za pomocą komendy `docker-compose up`
 
 ---
 ### Dokumentacja
