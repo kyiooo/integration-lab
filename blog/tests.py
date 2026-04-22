@@ -1,19 +1,18 @@
-from urllib import response
-
 from django.test import TestCase
 from django.urls import reverse
-from requests import post
-from .models import Post
 from django.contrib.auth.models import User
+
+from .models import Post
+
 
 class BlogLogicTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-        username='tester',
-        password='test123'
+            username='tester',
+            password='test123'
         )
-    
+
     def test_empty_blog_behavior(self):
         """Sprawdza, czy strona działa poprawnie, gdy nie ma jeszcze postów."""
         response = self.client.get(reverse('postList'))
@@ -27,9 +26,9 @@ class BlogLogicTests(TestCase):
     def test_post_string_representation_returns_title(self):
         """Test modelu: sprawdza, czy reprezentacja stringowa posta zwraca tytuł."""
         post = Post.objects.create(
-        title='Moj testowy post',
-        content='Tresć posta',
-        author=self.user
+            title='Moj testowy post',
+            content='Tresć posta',
+            author=self.user
         )
         self.assertEqual(str(post), 'Moj testowy post')
 
