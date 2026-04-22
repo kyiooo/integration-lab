@@ -153,3 +153,40 @@ max-line-length = 88
 ```
 Dzięki niemu, przy komendzie `python -m flake8 .` wytnie śmieci i poluzuje trochę limit do 88 linii.
 Odnośnie tego w pliku `main.yml` zmieniłam `flake8 .` na `python -m flake8 .`
+Ostatnim czym zrobiłam to naprawiłam wszystkie błędy flake8. 
+
+Po czyszczeniu wykonałam commita sprawdzającego czy tym razem wszystko działa poprawnie:
+```
+git add .
+git commit -m "Fix linting issues detected by CI"
+git push origin feature/ci-cd
+```
+![test workflow2](https://i.postimg.cc/bNv284K8/obraz-2026-04-22-120437472.png)
+
+3. Zadanie: Celowo zepsuj test i sprawdź, czy GitHub Actions zgłosi błąd (czerwony status). Napraw błąd.
+
+W pliku `blog/tests.py` w teście _test_post_string_representation_returns_title_, który sprawdza czy model poprawnie zwraca tytuł jako tekst zmieniam **celowo**
+linijke:
+> self.assertEqual(str(post), 'Moj testowy post')
+
+na:
+>self.assertEqual(str(post), 'Zly tytul')
+
+![zlyTytultest](https://i.postimg.cc/pLbh8ymZ/obraz-2026-04-22-121311942.png)
+
+Commit zepsutego testu:
+```
+git add blog/tests.py
+git commit -m "Break tests to verify CI failure"
+git push origin feature/ci-cd
+```
+![zlyTytultest1](https://i.postimg.cc/HLJkhgcz/obraz-2026-04-22-121658647.png)
+![zlyTytultest2](https://i.postimg.cc/YCTHjm0Z/obraz-2026-04-22-121826721.png)
+![zlyTytultest3](https://i.postimg.cc/QCYzPRWq/obraz-2026-04-22-121932709.png)
+
+Kolejno przeszłam do naprawienia błędu i ponownego commita:
+```
+git add .
+git commit -m "Configure GitHub Actions CI pipeline"
+git push origin feature/ci-cd
+```
