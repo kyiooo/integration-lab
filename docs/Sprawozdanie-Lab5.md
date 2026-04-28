@@ -190,3 +190,9 @@ git add .
 git commit -m "Configure GitHub Actions CI pipeline"
 git push origin feature/ci-cd
 ```
+![finalnyGithubActions](https://i.postimg.cc/kXBM4CwD/obraz-2026-04-22-122307153.png)
+
+---
+
+### Punkt 3 - Wdrożenie na Render.com lub Leapcell.io
+
